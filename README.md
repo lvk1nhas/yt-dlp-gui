@@ -82,7 +82,7 @@ lvkMD/
 
 ## 📸 Interface
 
-> *(Adicionarei aqui uma captura de tela do programa rodando)*  
+> ![Um print da tela do programa](media/Tela.png)
 
 ---
 
