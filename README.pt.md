@@ -35,9 +35,9 @@ pip install customtkinter
 
 > O `tkinter` padrão já vem com o Python em sistemas Windows.  
 > Se estiver usando Linux, você pode instalar com:
-> ```bash
-> sudo apt install python3-tk
-> ```
+```bash
+ sudo apt install python3-tk
+```
 
 ### ✔️ yt-dlp (o motor de download)
 
