@@ -41,11 +41,14 @@ pip install customtkinter
 
 ### ✔️ yt-dlp (o motor de download)
 
-Você precisa ter o `yt-dlp` instalado e acessível pelo terminal (CMD):
+Você precisa ter o `yt-dlp` instalado e acessível pelo terminal (CMD).
 
-1. [Baixe o yt-dlp aqui](https://github.com/yt-dlp/yt-dlp/releases/latest)
-2. Renomeie o executável para `yt-dlp.exe`
-3. Coloque-o em uma pasta e adicione essa pasta à variável de ambiente `PATH`, **ou** coloque `yt-dlp.exe` na mesma pasta do seu script.
+Recomendamos instalar o yt-dlp via pip para facilitar a instalação e atualizações:
+
+```bash
+pip install yt-dlp
+```
+Assim, o yt-dlp ficará disponível no seu ambiente Python e pode ser usado diretamente pelo script, sem necessidade de download manual ou configuração de PATH.
 
 ---
 
