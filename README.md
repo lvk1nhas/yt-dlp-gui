@@ -9,7 +9,7 @@ Ideal for those who want to avoid terminal use and automate the download process
 
 ---
 
-## 🚀 Objetivo
+## 🚀 Objective
 
 > "I used to download livestreams and videos and always had to open the terminal, type commands, and deal with errors manually. This program was created to simplify that process — with a simple and functional visual interface."
 
@@ -75,7 +75,7 @@ lvkMD/
 
 ---
 
-## 📌 Observações
+## 📌 Observations
 
 - The program works with any link supported by `yt-dlp`: YouTube, Twitch, Facebook, etc.
 - The format field accepts combinations like `137+140` to download video and audio together.
@@ -117,7 +117,7 @@ lvkMD/
 
 ## 📄 License
 
-This project is licensed under the MIT License.
-Feel free to modify and contribute!
+- This project is licensed under the MIT License.
+- Feel free to modify and contribute!
 ---
 
