@@ -1,4 +1,4 @@
-# 🎬 Gravador de Lives (GUI para yt-dlp)
+# 🎬 LVK Media Downloader (GUI para yt-dlp)
 
 Uma interface gráfica simples, moderna e eficiente para baixar vídeos e transmissões ao vivo usando `yt-dlp`.  
 Ideal para quem quer evitar o uso do terminal e automatizar o processo de download com apenas alguns cliques.
@@ -13,11 +13,13 @@ Ideal para quem quer evitar o uso do terminal e automatizar o processo de downlo
 
 ## 🖥️ Funcionalidades
 
-- Verificar a qualidade/formatos disponíveis de vídeos via link.
-- Escolher o código do formato desejado (áudio, vídeo, ambos).
-- Selecionar uma pasta de destino personalizada para salvar os arquivos.
-- Iniciar, acompanhar e parar o download em tempo real.
-- Interface responsiva, com status do processo e saída ao vivo do `yt-dlp`.
+- 🔍 Verifica os formatos disponíveis de vídeos ao colar o link
+- 🎯 Suporta seleção de **vídeo + áudio juntos** (ex: `137+140`)
+- 📁 Permite escolher a pasta de destino para o arquivo baixado
+- ⏬ Mostra o progresso do download em tempo real (via `yt-dlp`)
+- 🟥 Possibilidade de **parar o download** manualmente
+- 🎨 Interface moderna com `CustomTkinter`
+- 🧠 Nome de arquivos com timestamp para evitar sobrescrita
 
 ---
 
@@ -65,17 +67,17 @@ lvkMD/
    `python main.py`
 2. Cole o link de uma transmissão ou vídeo.
 3. Clique em **Verificar Link** para listar os formatos disponíveis.
-4. Escolha o código do formato (ex: 22, 137, 140).
+4. Escolha o código do formato (ex: `137+140` para vídeo+áudio).
 5. Clique em **Escolher Pasta** e selecione onde quer salvar.
 6. Clique em **Baixar** e acompanhe o progresso.
-7. Pode clicar em **Parar Download** para cancelar o processo.
+7. Acompanhe o progresso ou clique em **Parar Download**
 
 ---
 
 ## 📌 Observações
 
 - O programa funciona com qualquer link suportado pelo `yt-dlp`: YouTube, Twitch, Facebook, etc.
-- O ícone pode ser trocado por qualquer `.ico` personalizado.
+- O campo de formato aceita combinações como `137+140` para baixar vídeo e áudio juntos.
 - O nome do arquivo salvo inclui um timestamp para evitar sobrescrever vídeos com o mesmo nome. 
 
 ---
@@ -83,6 +85,15 @@ lvkMD/
 ## 📸 Interface
 
 > ![Um print da tela do programa](media/Tela.png)
+
+---
+
+## 🔄 Histórico de versões
+
+### ✅ Versão 2.0 (atual)
+- Suporte ao download de vídeo+áudio combinados (`137+140`)
+- Melhor legibilidade dos formatos listados
+- Atualizações visuais e estruturais no código
 
 ---
 
@@ -95,7 +106,7 @@ lvkMD/
 
 ---
 
-## 🛠️ Feito com
+## 🛠️ Tecnologias usadas
 
 - Python 🐍
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
