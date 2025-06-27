@@ -10,8 +10,18 @@ import customtkinter as ctk
 from tkinter import filedialog
 
 
+
+
 pasta_destino = ""
 processo_download = None  # global
+
+def resource_path(relative_path):
+    """Retorna o caminho absoluto para o recurso, funciona com PyInstaller."""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 def escolher_pasta():
     global pasta_destino
@@ -112,7 +122,8 @@ janela = ctk.CTk()
 janela.title("LVK Media Downloader")
 janela.geometry("1000x650") # largura x altura
 janela.minsize(1000, 650)
-janela.iconbitmap(r"D:/Minhas pastas/Projetos/Meus projetos/lvkMD/media/5D.ico") # se for ico
+icone_path = resource_path("media/5D.ico")
+janela.iconbitmap(icone_path)
 
 # Fonte personalizada para labels, botões e entradas, negrito
 FONT_BOLD = ("Segoe UI", 12, "bold")
@@ -155,7 +166,7 @@ botao_verificar.pack(side=tk.LEFT, padx=10)
 frame_meio = ctk.CTkFrame(janela, fg_color="#222222", corner_radius=10)
 frame_meio.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
-saida_texto = scrolledtext.ScrolledText(frame_meio, wrap=tk.WORD, font=FONT_BOLD)
+saida_texto = scrolledtext.ScrolledText(frame_meio, wrap=tk.WORD, font=("Consolas", 12, "bold"))
 saida_texto.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
 frame_baixar = ctk.CTkFrame(janela, fg_color="#222222", corner_radius=10)
