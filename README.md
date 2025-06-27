@@ -39,15 +39,19 @@ pip install customtkinter
 
 > The standard tkinter comes pre-installed with Python on Windows.
 > If you’re using Linux, you can install it with: 
-> ```bashsudo apt install python3-tk```
+```bash
+sudo apt install python3-tk
+```
 
 ### ✔️ yt-dlp (the download engine)
 
 You need to have yt-dlp installed and accessible from the terminal (CMD):
 
-1. [Download yt-dlp here](https://github.com/yt-dlp/yt-dlp/releases/latest)
-2. Rename the executable to `yt-dlp.exe`
-3. Place it in a folder and add that folder to your system’s PATH environment variable, or put yt-dlp.exe in the same folder as your script.
+```bash 
+pip install yt-dlp 
+```
+This way, yt-dlp will be available in your Python environment and can be called directly by the script without needing manual downloads or PATH configuration.
+
 
 ---
 
