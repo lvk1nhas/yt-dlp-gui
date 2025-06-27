@@ -1,0 +1,15 @@
+# Ignorar pastas de build do PyInstaller
+build/
+dist/
+__pycache__/
+
+# Ignorar o arquivo de configuração do PyInstaller
+*.spec
+
+# Ignorar arquivos temporários
+*.log
+*.tmp
+*.bak
+
+# Ignorar arquivos do VS Code 
+.vscode/
