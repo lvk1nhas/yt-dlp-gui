@@ -1,0 +1,1 @@
+pyinstaller --windowed --onefile --name "LVK Media Downloader" --icon="media/5D.ico" --add-data "media;media" main.py
