@@ -1,220 +1,477 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import subprocess
 import threading
 import sys
 import os
 import datetime
 import customtkinter as ctk
-from tkinter import filedialog
 
-# -- Variáveis Globais --
-pasta_destino = ""
-processo_download = None
-
-# --- Funções ---
-
+# --- Configurações de Sistema ---
 def resource_path(relative_path):
-    """Retorna o caminho absoluto para o recurso, funciona com PyInstaller."""
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-def atualizar_estado_widgets(status):
-    """Habilita/desabilita widgets para evitar ações concorrentes."""
-    if status == "ocupado":
-        estado = "disabled"
-        status_texto = "Verificando..."
-        status_cor = "orange"
-    elif status == "download":
-        estado = "disabled"
-        status_texto = "Download..."
-        status_cor = "red"
-    else: # 'pronto'
-        estado = "normal"
-        status_texto = "Pronto"
-        status_cor = "green"
+WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
-    botao_verificar.configure(state=estado)
-    botao_baixar.configure(state=estado)
-    botao_parar.configure(state="normal" if status == "download" else "")
-    status_label.configure(text=status_texto, fg_color=status_cor)
+# --- DICIONÁRIO DE IDIOMAS ---
+TRADUCOES = {
+    "pt": {
+        "url_label": "URL:",
+        "btn_verify": "Verificar Link",
+        "status_ready": "Pronto",
+        "status_busy": "Verificando...",
+        "status_download": "Baixando...",
+        "list_title": "Formatos Disponíveis",
+        "list_hint": "Insira o link e clique em verificar.",
+        "code_label": "Código:",
+        "code_placeholder": "Ex: 137",
+        "btn_folder": "Escolher Pasta",
+        "folder_none": "Pasta NÃO escolhida!",
+        "folder_selected": "Pasta: ",
+        "btn_download": "Baixar",
+        "btn_stop": "Parar",
+        "ctx_copy": "Copiar",
+        "ctx_paste": "Colar",
+        "ctx_cut": "Recortar",
+        "ctx_del": "Apagar",
+        "ctx_all": "Selecionar Tudo",
+        "msg_warn_link": "Digite um link.",
+        "msg_warn_folder": "Escolha uma pasta.",
+        "msg_warn_code": "Preencha URL e Código.",
+        "msg_info_stop": "Download interrompido por você.",
+        "msg_success": "Download Finalizado!",
+        "msg_error": "Ocorreu uma falha no download.",
+        "header_loading": "Carregando formatos...",
+        "header_error": "Erro ao buscar formatos.",
+        "msg_nothing": "Nada baixando no momento.", 
+    },
+    "en": {
+        "url_label": "URL:",
+        "btn_verify": "Check Link",
+        "status_ready": "Ready",
+        "status_busy": "Checking...",
+        "status_download": "Downloading...",
+        "list_title": "Available Formats",
+        "list_hint": "Paste link and click check.",
+        "code_label": "Code:",
+        "code_placeholder": "Ex: 137",
+        "btn_folder": "Choose Folder",
+        "folder_none": "NO folder selected!",
+        "folder_selected": "Folder: ",
+        "btn_download": "Download",
+        "btn_stop": "Stop",
+        "ctx_copy": "Copy",
+        "ctx_paste": "Paste",
+        "ctx_cut": "Cut",
+        "ctx_del": "Delete",
+        "ctx_all": "Select All",
+        "msg_warn_link": "Enter a link.",
+        "msg_warn_folder": "Choose a folder.",
+        "msg_warn_code": "Fill in URL and Code.",
+        "msg_info_stop": "Download stopped by user.",
+        "msg_success": "Download Finished!",
+        "msg_error": "Download failed.",
+        "header_loading": "Loading formats...",
+        "header_error": "Error fetching formats.",
+        "msg_nothing": "Nothing is downloading.", 
+    },
+    "es": {
+        "url_label": "URL:",
+        "btn_verify": "Verificar Enlace",
+        "status_ready": "Listo",
+        "status_busy": "Verificando...",
+        "status_download": "Descargando...",
+        "list_title": "Formatos Disponibles",
+        "list_hint": "Pegue el enlace y verifique.",
+        "code_label": "Código:",
+        "code_placeholder": "Ej: 137",
+        "btn_folder": "Elegir Carpeta",
+        "folder_none": "¡Carpeta NO elegida!",
+        "folder_selected": "Carpeta: ",
+        "btn_download": "Descargar",
+        "btn_stop": "Detener",
+        "ctx_copy": "Copiar",
+        "ctx_paste": "Pegar",
+        "ctx_cut": "Cortar",
+        "ctx_del": "Borrar",
+        "ctx_all": "Seleccionar Todo",
+        "msg_warn_link": "Ingrese un enlace.",
+        "msg_warn_folder": "Elija una carpeta.",
+        "msg_warn_code": "Complete URL y Código.",
+        "msg_info_stop": "Descarga detenida por usuario.",
+        "msg_success": "¡Descarga Finalizada!",
+        "msg_error": "La descarga falló.",
+        "header_loading": "Cargando formatos...",
+        "header_error": "Error al buscar formatos.",
+        "msg_nothing": "Nada descargando.",
+    }
+}
 
-def escolher_pasta():
-    global pasta_destino
-    caminho = filedialog.askdirectory(title="Escolha a pasta para salvar o download")
-    if caminho:
-        pasta_destino = caminho
-        nome_da_pasta = os.path.basename(caminho)
-        label_pasta.configure(text=f"Pasta: {nome_da_pasta}")
+class LVMediaDownloader(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        
+        # Configurações da Janela
+        self.title("L V - Media Downloader")
+        self.geometry("1000x700")
+        self.minsize(1000, 650)
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("dark-blue")
+        try: self.iconbitmap(resource_path("media/5D.ico"))
+        except: pass
 
-def verificar_link_thread(url):
-    """Executa a verificação do link em uma thread para não travar a GUI."""
-    try:
-        flags = 0
-        if sys.platform == "win32":
-            flags = subprocess.CREATE_NO_WINDOW
+        # Variáveis
+        self.pasta_destino = ""
+        self.processo_download = None
+        self.parou_manual = False
+        self.ultimo_resultado = None 
+        self.font_bold = ("Segoe UI", 12, "bold")
+        self.font_mono = ("Consolas", 11)
+        
+        # Controle de Estado e Idioma
+        self.status_atual_key = "status_ready" # Guarda a chave do status atual
+        self.idioma = "pt"
+        self.mapa_idiomas = {"Português": "pt", "English": "en", "Español": "es"}
 
-        resultado = subprocess.run(["yt-dlp", "-F", url], capture_output=True, text=True, creationflags=flags)
+        self.setup_ui()
+        self.atualizar_textos()
 
-        saida_texto.delete(1.0, tk.END)
+    def t(self, key):
+        return TRADUCOES[self.idioma].get(key, key)
 
-        if "Unsupported URL" in resultado.stdout or "ERROR" in resultado.stderr:
-            saida_texto.insert(tk.END, "⚠️ Link não suportado ou fora do ar.")
+    def setup_ui(self):
+        # --- Topo (URL e Idioma) ---
+        frame_top = ctk.CTkFrame(self)
+        frame_top.pack(fill=tk.X, padx=15, pady=(15, 5))
+
+        self.lbl_url = ctk.CTkLabel(frame_top, text="", font=self.font_bold)
+        self.lbl_url.pack(side=tk.LEFT, padx=(10, 5))
+        
+        self.url_var = tk.StringVar()
+        self.url_var.trace("w", lambda *a: self.url_var.set(self.url_var.get()[:400]) if len(self.url_var.get()) > 400 else None)
+        
+        self.entrada_url = ctk.CTkEntry(frame_top, font=self.font_bold, textvariable=self.url_var)
+        self.entrada_url.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        self.criar_menu_contexto(self.entrada_url)
+
+        self.btn_verificar = ctk.CTkButton(frame_top, text="", width=130, font=self.font_bold, command=self.verificar_link)
+        self.btn_verificar.pack(side=tk.LEFT, padx=5)
+        
+        self.combo_idioma = ctk.CTkOptionMenu(
+            frame_top, 
+            values=list(self.mapa_idiomas.keys()), 
+            width=100,
+            command=self.mudar_idioma
+        )
+        self.combo_idioma.set("Português")
+        self.combo_idioma.pack(side=tk.RIGHT, padx=5)
+
+        self.status_label = ctk.CTkLabel(frame_top, text="", text_color="white", width=120, height=30, corner_radius=6, font=self.font_bold, fg_color="green")
+        self.status_label.pack(side=tk.RIGHT, padx=(5, 10))
+
+        # --- MEIO ---
+        self.frame_central = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_central.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+
+        self.frame_lista = ctk.CTkScrollableFrame(self.frame_central, label_text="")
+        self.frame_lista.pack(fill=tk.BOTH, expand=True)
+        
+        self.lbl_aviso = ctk.CTkLabel(self.frame_lista, text="", font=self.font_bold, text_color="gray")
+        self.lbl_aviso.pack(pady=20)
+
+        self.caixa_log = ctk.CTkTextbox(self.frame_central, wrap=tk.WORD, font=self.font_mono)
+        self.criar_menu_contexto(self.caixa_log, readonly=True)
+
+        # --- Base ---
+        frame_baixar = ctk.CTkFrame(self)
+        frame_baixar.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        self.lbl_codigo = ctk.CTkLabel(frame_baixar, text="", font=self.font_bold)
+        self.lbl_codigo.pack(side=tk.LEFT, padx=(10, 5))
+        
+        self.entrada_formato = ctk.CTkEntry(frame_baixar, width=100, font=self.font_bold, placeholder_text="")
+        self.entrada_formato.pack(side=tk.LEFT, padx=5)
+        self.criar_menu_contexto(self.entrada_formato)
+
+        self.btn_pasta = ctk.CTkButton(frame_baixar, text="", font=self.font_bold, command=self.escolher_pasta)
+        self.btn_pasta.pack(side=tk.LEFT, padx=10)
+        
+        self.label_pasta = ctk.CTkLabel(frame_baixar, text="", font=self.font_bold)
+        self.label_pasta.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        self.btn_baixar = ctk.CTkButton(frame_baixar, text="", width=120, font=self.font_bold, command=self.baixar_video)
+        self.btn_baixar.pack(side=tk.LEFT, padx=5)
+        
+        self.btn_parar = ctk.CTkButton(frame_baixar, text="", width=100, font=self.font_bold, fg_color="#D9534F", hover_color="#C9302C", command=self.parar_download)
+        self.btn_parar.pack(side=tk.LEFT, padx=(5, 10))
+
+    # --- Lógica de Idioma ---
+    def mudar_idioma(self, escolha):
+        self.idioma = self.mapa_idiomas[escolha]
+        self.atualizar_textos()
+
+    def atualizar_textos(self):
+        # Textos Gerais
+        self.lbl_url.configure(text=self.t("url_label"))
+        self.btn_verificar.configure(text=self.t("btn_verify"))
+        
+        # Atualiza o status baseado no estado atual (não força "Pronto")
+        self.status_label.configure(text=self.t(self.status_atual_key))
+        
+        self.frame_lista.configure(label_text=self.t("list_title"))
+        try: self.lbl_aviso.configure(text=self.t("list_hint"))
+        except: pass 
+
+        self.lbl_codigo.configure(text=self.t("code_label"))
+        self.entrada_formato.configure(placeholder_text=self.t("code_placeholder"))
+        
+        self.btn_pasta.configure(text=self.t("btn_folder"))
+        self.btn_baixar.configure(text=self.t("btn_download"))
+        self.btn_parar.configure(text=self.t("btn_stop"))
+        
+        if not self.pasta_destino:
+            self.label_pasta.configure(text=self.t("folder_none"))
         else:
-            saida_texto.insert(tk.END, resultado.stdout)
-            saida_texto.insert(tk.END, "\n\nVerificação concluída. Insira um código de formato e clique em Baixar.")
-    except Exception as e:
-        messagebox.showerror("Erro", f"Ocorreu um erro ao verificar: {str(e)}")
-    finally:
-        atualizar_estado_widgets("pronto")
+            self.label_pasta.configure(text=f"{self.t('folder_selected')}{os.path.basename(self.pasta_destino)}")
 
-def verificar_link():
-    url = entrada_url.get().strip()
-    if not url:
-        messagebox.showwarning("Aviso", "Digite um link.")
-        return
+        if self.ultimo_resultado:
+            self._processar_output_lista(self.ultimo_resultado)
 
-    atualizar_estado_widgets("ocupado")
-    thread = threading.Thread(target=verificar_link_thread, args=(url,), daemon=True)
-    thread.start()
+    # --- Lógica de Interface ---
+    def mostrar_painel(self, qual):
+        if qual == "lista":
+            self.caixa_log.pack_forget()
+            self.frame_lista.pack(fill=tk.BOTH, expand=True)
+        elif qual == "log":
+            self.frame_lista.pack_forget()
+            self.caixa_log.pack(fill=tk.BOTH, expand=True)
 
-def download_thread(url, formato):
-    global processo_download
-    
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    nome_arquivo = os.path.join(pasta_destino, f"%(title)s_{timestamp}.%(ext)s")
-    
-    comando = ["yt-dlp", "-f", formato, "--no-part", "-o", nome_arquivo, url]
+    def criar_menu_contexto(self, widget, readonly=False):
+        menu = tk.Menu(widget, tearoff=0)
+        
+        def recortar():
+            try:
+                if readonly: return
+                texto = widget.selection_get()
+                widget.clipboard_clear()
+                widget.clipboard_append(texto)
+                widget.update()
+                widget.delete("sel.first", "sel.last")
+            except: pass
+        def colar():
+            try:
+                if readonly: return
+                texto = widget.clipboard_get()
+                try: widget.delete("sel.first", "sel.last")
+                except: pass
+                widget.insert("insert", texto)
+            except: pass
+        def copiar():
+            try:
+                texto = widget.get("sel.first", "sel.last") if readonly else widget.selection_get()
+                if texto:
+                    widget.clipboard_clear()
+                    widget.clipboard_append(texto)
+                    widget.update()
+            except: pass
+        def selecionar_tudo():
+            widget.select_range(0, 'end')
+            widget.icursor('end')
+        def apagar():
+            try:
+                if readonly: return
+                widget.delete("sel.first", "sel.last")
+            except: pass
 
-    flags = 0
-    if sys.platform == "win32":
-        # Removido CREATE_NEW_PROCESS_GROUP, pois vamos matar pelo PID com taskkill
-        flags = subprocess.CREATE_NO_WINDOW
+        def mostrar(e):
+            menu.delete(0, tk.END)
+            if not readonly:
+                menu.add_command(label=self.t("ctx_cut"), command=recortar)
+            menu.add_command(label=self.t("ctx_copy"), command=copiar)
+            if not readonly:
+                menu.add_command(label=self.t("ctx_paste"), command=colar)
+                menu.add_command(label=self.t("ctx_del"), command=apagar)
+            menu.add_separator()
+            menu.add_command(label=self.t("ctx_all"), command=selecionar_tudo)
+            menu.tk_popup(e.x_root, e.y_root)
 
-    processo_download = subprocess.Popen(
-        comando,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding='utf-8',
-        errors='replace',
-        creationflags=flags
-    )
+        widget.bind("<Button-3>", mostrar)
 
-    saida_texto.delete(1.0, tk.END)
-    saida_texto.insert(tk.END, "Iniciando download...\n\n")
-    saida_texto.see(tk.END)
+    def atualizar_estado(self, status):
+        # Mapeamento
+        mapa = {
+            "ocupado": ("disabled", "status_busy", "orange"),
+            "download": ("disabled", "status_download", "red"),
+            "pronto": ("normal", "status_ready", "green")
+        }
+        # Pega a configuração
+        estado, key_texto, cor = mapa.get(status, ("normal", "status_ready", "green"))
+        
+        # Salva a chave atual para o caso de mudança de idioma
+        self.status_atual_key = key_texto
+        
+        self.btn_verificar.configure(state=estado)
+        self.btn_baixar.configure(state=estado)
+        self.status_label.configure(text=self.t(key_texto), fg_color=cor)
 
-    for linha in processo_download.stdout:
-        saida_texto.insert(tk.END, linha)
-        saida_texto.see(tk.END)
+    def escolher_pasta(self):
+        caminho = filedialog.askdirectory()
+        if caminho:
+            self.pasta_destino = caminho
+            self.label_pasta.configure(text=f"{self.t('folder_selected')}{os.path.basename(caminho)}")
 
-    ret_code = processo_download.wait()
+    def selecionar_codigo(self, codigo):
+        self.entrada_formato.delete(0, tk.END)
+        self.entrada_formato.insert(0, codigo)
 
-    if processo_download and processo_download.poll() is not None and ret_code == 0:
-        saida_texto.insert(tk.END, "\n\n✅ Download finalizado com sucesso!\n")
-    else:
-        saida_texto.insert(tk.END, "\n\n❌ Download interrompido ou falhou.\n")
+    def adicionar_codigo(self, codigo):
+        texto_atual = self.entrada_formato.get().strip()
+        if not texto_atual:
+            self.entrada_formato.insert(0, codigo)
+        else:
+            self.entrada_formato.insert(tk.END, f"+{codigo}")
 
-    processo_download = None
-    atualizar_estado_widgets("pronto")
+    # --- Verificação ---
+    def verificar_link(self):
+        url = self.entrada_url.get().strip()
+        if not url: return messagebox.showwarning("Aviso", self.t("msg_warn_link"))
+        
+        self.mostrar_painel("lista")
+        for widget in self.frame_lista.winfo_children():
+            widget.destroy()
+        
+        ctk.CTkLabel(self.frame_lista, text=self.t("header_loading"), font=self.font_bold).pack(pady=20)
+        self.atualizar_estado("ocupado")
+        threading.Thread(target=self._verificar_thread, args=(url,), daemon=True).start()
 
-def baixar_video():
-    url = entrada_url.get().strip()
-    formato = entrada_formato.get().strip()
-
-    if not pasta_destino:
-        messagebox.showwarning("Aviso", "Por favor, escolha uma pasta de destino primeiro.")
-        return
-    if not url or not formato:
-        messagebox.showwarning("Aviso", "Digite o link e o código do formato.")
-        return
-
-    atualizar_estado_widgets("download")
-    thread = threading.Thread(target=download_thread, args=(url, formato), daemon=True)
-    thread.start()
-
-# --- LÓGICA DE PARADA DEFINITIVA ---
-def parar_download():
-    """Usa o comando 'taskkill' do Windows para forçar o encerramento do processo e de seus filhos."""
-    global processo_download
-    if processo_download and processo_download.poll() is None:
+    def _verificar_thread(self, url):
         try:
-            saida_texto.insert(tk.END, "\n\n>> Usando taskkill para forçar o encerramento do processo...\n")
-            status_label.configure(text="Parando...", fg_color="orange")
-
-            pid = processo_download.pid
-            comando_kill = ["taskkill", "/F", "/PID", str(pid), "/T"]
-            
-            subprocess.run(comando_kill, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-
+            res = subprocess.run(["yt-dlp", "-F", url], capture_output=True, text=True, creationflags=WIN_FLAGS)
+            self.ultimo_resultado = res
+            self.after(0, lambda: self._processar_output_lista(res))
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao executar taskkill: {str(e)}")
-            atualizar_estado_widgets("pronto")
-    else:
-        messagebox.showinfo("Info", "Nenhum download em andamento.")
-# --- FIM DA LÓGICA DE PARADA ---
+            self.after(0, lambda: messagebox.showerror("Erro", str(e)))
+        finally:
+            self.after(0, lambda: self.atualizar_estado("pronto"))
 
-def add_paste_menu(widget):
-    menu = tk.Menu(widget, tearoff=0)
-    menu.add_command(label="Colar", command=lambda: widget.insert(tk.END, widget.clipboard_get()))
+    def _processar_output_lista(self, res):
+        for widget in self.frame_lista.winfo_children():
+            widget.destroy()
 
-    def show_menu(event):
-        menu.tk_popup(event.x_root, event.y_root)
+        if "ERROR" in res.stderr:
+            ctk.CTkLabel(self.frame_lista, text=self.t("header_error"), text_color="red").pack(pady=20)
+            return
 
-    widget.bind("<Button-3>", show_menu)
+        self.frame_lista.grid_columnconfigure(0, weight=0) 
+        self.frame_lista.grid_columnconfigure(1, weight=0)
+        self.frame_lista.grid_columnconfigure(2, weight=1)
 
-# --- Interface ---
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
+        linhas = res.stdout.splitlines()
+        row_idx = 0 
+        cabecalho_passou = False
+        
+        for linha in linhas:
+            linha = linha.strip()
+            if not linha: continue
+            
+            if "ID" in linha and "EXT" in linha and "RESOLUTION" in linha:
+                cabecalho_passou = True
+                # --- HEADERS FIXOS (SEM TRADUÇÃO) ---
+                ctk.CTkLabel(self.frame_lista, text="ID", font=self.font_bold, text_color="#AAAAAA").grid(row=row_idx, column=0, padx=5, pady=5, sticky="ew")
+                ctk.CTkLabel(self.frame_lista, text="Add", font=self.font_bold, text_color="#AAAAAA").grid(row=row_idx, column=1, padx=5, pady=5, sticky="ew")
+                
+                texto_resto = linha.replace("ID", "  ", 1).strip()
+                ctk.CTkLabel(self.frame_lista, text=texto_resto, font=self.font_mono, text_color="#AAAAAA", anchor="w").grid(row=row_idx, column=2, padx=5, pady=5, sticky="w")
+                row_idx += 1
+                continue
+            
+            if not cabecalho_passou: continue 
 
-janela = ctk.CTk()
-janela.title("")
-janela.geometry("1000x650")
-janela.minsize(1000, 650)
-try:
-    icone_path = resource_path("media/5D.ico")
-    janela.iconbitmap(icone_path)
-except Exception:
-    print("Ícone não encontrado, continuando sem ele.")
+            partes = linha.split()
+            if not partes: continue
+            codigo = partes[0]
+            if codigo.startswith("["): continue
+            if "---" in codigo: continue
 
-FONT_BOLD = ("Segoe UI", 12, "bold")
+            ctk.CTkButton(
+                self.frame_lista, text=codigo, height=25,
+                fg_color="#2B2B2B", border_width=1, border_color="#1F6AA5",
+                hover_color="#1F6AA5", font=self.font_bold,
+                command=lambda c=codigo: self.selecionar_codigo(c) 
+            ).grid(row=row_idx, column=0, padx=2, pady=2, sticky="ew")
 
-# ... (o resto da sua UI continua exatamente o mesmo) ...
-frame_top = ctk.CTkFrame(janela)
-frame_top.pack(fill=tk.X, padx=15, pady=(15, 5))
-label_url = ctk.CTkLabel(frame_top, text="URL:", font=FONT_BOLD)
-label_url.pack(side=tk.LEFT, padx=(10, 5))
-entrada_url = ctk.CTkEntry(frame_top, font=FONT_BOLD)
-entrada_url.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-add_paste_menu(entrada_url)
-botao_verificar = ctk.CTkButton(frame_top, text="Verificar Link", width=130, font=FONT_BOLD, command=verificar_link)
-botao_verificar.pack(side=tk.LEFT, padx=5)
-status_label = ctk.CTkLabel(frame_top, text="Pronto", text_color="white", width=120, height=30, corner_radius=6, font=FONT_BOLD, fg_color="green")
-status_label.pack(side=tk.RIGHT, padx=(5, 10))
+            ctk.CTkButton(
+                self.frame_lista, text="+", width=30, height=25,
+                fg_color="#3A3A3A", border_width=1, border_color="#28A745",
+                hover_color="#28A745", font=self.font_bold,
+                command=lambda c=codigo: self.adicionar_codigo(c) 
+            ).grid(row=row_idx, column=1, padx=2, pady=2, sticky="ew")
 
-frame_meio = ctk.CTkFrame(janela)
-frame_meio.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
-saida_texto = ctk.CTkTextbox(frame_meio, wrap=tk.WORD, font=("Consolas", 12))
-saida_texto.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            descricao = linha[len(codigo):].strip()
+            ctk.CTkLabel(self.frame_lista, text=descricao, font=self.font_mono, anchor="w").grid(row=row_idx, column=2, padx=5, pady=2, sticky="w")
+            row_idx += 1
 
-frame_baixar = ctk.CTkFrame(janela)
-frame_baixar.pack(fill=tk.X, padx=15, pady=(5, 15))
-label_formato = ctk.CTkLabel(frame_baixar, text="Código do formato:", font=FONT_BOLD)
-label_formato.pack(side=tk.LEFT, padx=(10, 5))
-entrada_formato = ctk.CTkEntry(frame_baixar, width=80, font=FONT_BOLD)
-entrada_formato.pack(side=tk.LEFT, padx=5)
-add_paste_menu(entrada_formato)
-botao_escolher_pasta = ctk.CTkButton(frame_baixar, text="Escolher Pasta", font=FONT_BOLD, command=escolher_pasta)
-botao_escolher_pasta.pack(side=tk.LEFT, padx=10)
-label_pasta = ctk.CTkLabel(frame_baixar, text="Pasta NÃO escolhida!", font=FONT_BOLD)
-label_pasta.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-botao_baixar = ctk.CTkButton(frame_baixar, text="Baixar", width=120, font=FONT_BOLD, command=baixar_video)
-botao_baixar.pack(side=tk.LEFT, padx=5)
-botao_parar = ctk.CTkButton(frame_baixar, text="Parar Download", width=120, font=FONT_BOLD, fg_color="#D9534F", hover_color="#C9302C", command=parar_download)
-botao_parar.pack(side=tk.LEFT, padx=(5, 10))
+    # --- Download ---
+    def baixar_video(self):
+        url = self.entrada_url.get().strip()
+        formato = self.entrada_formato.get().strip()
+        if not self.pasta_destino: return messagebox.showwarning("Aviso", self.t("msg_warn_folder"))
+        if not url or not formato: return messagebox.showwarning("Aviso", self.t("msg_warn_code"))
 
-janela.mainloop()
+        self.mostrar_painel("log")
+        self.caixa_log.delete(1.0, tk.END)
+        # LOG FIXO EM INGLÊS
+        self.caixa_log.insert(tk.END, ">> Starting download...\n") 
+
+        self.parou_manual = False
+        self.atualizar_estado("download")
+        threading.Thread(target=self._download_thread, args=(url, formato), daemon=True).start()
+
+    def _download_thread(self, url, formato):
+        nome = os.path.join(self.pasta_destino, f"%(title)s_{datetime.datetime.now():%Y%m%d_%H%M%S}.%(ext)s")
+        cmd = ["yt-dlp", "-f", formato, "--no-part", "-o", nome, url]
+        
+        self.processo_download = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+            text=True, encoding='utf-8', errors='replace', creationflags=WIN_FLAGS
+        )
+
+        for linha in self.processo_download.stdout:
+            self.after(0, lambda l=linha: self._log_texto(l))
+
+        ret_code = self.processo_download.wait()
+
+        if self.parou_manual:
+             self.after(0, lambda: messagebox.showinfo("Info", self.t("msg_info_stop")))
+        elif ret_code == 0:
+             self.after(0, lambda: messagebox.showinfo("Sucesso", self.t("msg_success")))
+        else:
+             self.after(0, lambda: messagebox.showerror("Erro", self.t("msg_error")))
+        
+        self.processo_download = None
+        self.after(0, lambda: self.atualizar_estado("pronto"))
+
+    def _log_texto(self, texto):
+        self.caixa_log.insert(tk.END, texto)
+        self.caixa_log.see(tk.END)
+
+    def parar_download(self):
+        if self.processo_download:
+            try:
+                self.parou_manual = True
+                subprocess.run(["taskkill", "/F", "/PID", str(self.processo_download.pid), "/T"], 
+                               capture_output=True, creationflags=WIN_FLAGS)
+                # LOG FIXO EM INGLÊS
+                self.caixa_log.insert(tk.END, "\n>> PROCESS STOPPED BY USER.\n") 
+            except Exception as e:
+                messagebox.showerror("Erro", str(e))
+        else:
+            messagebox.showinfo("Info", self.t("msg_nothing")) 
+
+if __name__ == "__main__":
+    app = LVMediaDownloader()
+    app.mainloop()
