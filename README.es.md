@@ -1,4 +1,4 @@
-# LVK Media Downloader
+# L V Media Downloader
 
 - 🇧🇷 [Leia em Português](README.pt.md)  
 - 🇪🇸 [Leia em Espanhol](README.es.md)
