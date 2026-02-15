@@ -96,6 +96,10 @@ lvkMD/
 ```bash
 pyinstaller --noconsole --onefile --clean --collect-all customtkinter --icon=media/5D.ico main.py
 ```
+or
+```bash
+python -m PyInstaller --noconsole --onefile --clean --collect-all customtkinter --icon=media/5D.ico main.py
+```
 
 2. Select Language: Use the dropdown menu (top-right) to choose your preferred language.
 3. Paste the URL: Supports YouTube, Twitch, Instagram, Kick, etc. (Tip: Right-click to paste)
