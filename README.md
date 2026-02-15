@@ -92,13 +92,9 @@ lvkMD/
 
 1. Run the application: ``python main.py`` (or run the compiled ``.exe``)
 
-> For the compiled exe go to Terminal (CMD) and:
+> For the compiled .exe go to terminal and:
 ```bash
-pyinstaller --noconsole --onefile --clean --collect-all customtkinter --icon=media/5D.ico main.py
-```
-or
-```bash
-python -m PyInstaller --noconsole --onefile --clean --collect-all customtkinter --icon=media/5D.ico main.py
+python -m PyInstaller --noconsole --onefile --clean --collect-all customtkinter --add-data "media;media" --icon=media/5D.ico main.py
 ```
 
 2. Select Language: Use the dropdown menu (top-right) to choose your preferred language.
