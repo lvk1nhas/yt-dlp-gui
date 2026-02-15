@@ -37,7 +37,24 @@ Ideal for those who want to avoid terminal usage and automate downloads with a p
 
 ## 📦 Requirements
 
+### ✔️ FFmpeg (Required for merging)
+To use the Green "+" Button (Video + Audio merge), FFmpeg must be installed on your system. Without it, yt-dlp cannot merge separate streams.
+```bash 
+winget install Gyan.FFmpeg
+```
+
+### ✔️ yt-dlp (the download engine)
+
+You need to have yt-dlp installed and accessible from the terminal (CMD):
+
+```bash 
+winget install yt-dlp.yt-dlp
+```
+This way, yt-dlp will be available in your Python environment and can be called directly by the script without needing manual downloads or PATH configuration.
+
 ### ✔️ Python Dependencies
+
+Install Python then...
 
 Install the following packages with `pip`:
 
@@ -51,18 +68,10 @@ pip install customtkinter
 sudo apt install python3-tk
 ```
 
-### ✔️ yt-dlp (the download engine)
-
-You need to have yt-dlp installed and accessible from the terminal (CMD):
-
-```bash 
-pip install yt-dlp 
+> To build your exe: 
+```bash
+pip install pyinstaller
 ```
-This way, yt-dlp will be available in your Python environment and can be called directly by the script without needing manual downloads or PATH configuration.
-
-### ✔️ FFmpeg (Required for merging)
-To use the Green "+" Button (Video + Audio merge), FFmpeg must be installed on your system. Without it, yt-dlp cannot merge separate streams.
-
 
 ---
 
@@ -82,6 +91,12 @@ lvkMD/
 ## ▶️ How to use
 
 1. Run the application: ``python main.py`` (or run the compiled ``.exe``)
+
+> For the compiled exe go to Terminal (CMD) and:
+```bash
+pyinstaller --noconsole --onefile --clean --collect-all customtkinter --icon=media/5D.ico main.py
+```
+
 2. Select Language: Use the dropdown menu (top-right) to choose your preferred language.
 3. Paste the URL: Supports YouTube, Twitch, Instagram, Kick, etc. (Tip: Right-click to paste)
 4. Click "Check Link": The app will list all available formats in an interactive grid.
