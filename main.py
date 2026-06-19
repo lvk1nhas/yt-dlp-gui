@@ -7,7 +7,6 @@ import os
 import datetime
 import customtkinter as ctk
 
-
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -17,6 +16,7 @@ def resource_path(relative_path):
 
 WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
+#remember to update lang
 TRADUCOES = {
     "pt": {
         "url_label": "URL:",
