@@ -7,7 +7,7 @@ import os
 import datetime
 import customtkinter as ctk
 
-# --- Configurações de Sistema ---
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
