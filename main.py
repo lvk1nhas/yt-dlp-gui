@@ -17,7 +17,6 @@ def resource_path(relative_path):
 
 WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
-# --- DICIONÁRIO DE IDIOMAS ---
 TRADUCOES = {
     "pt": {
         "url_label": "URL:",
@@ -115,7 +114,6 @@ class LVMediaDownloader(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        # Configurações da Janela
         self.title("L V - Media Downloader")
         self.geometry("1000x700")
         self.minsize(1000, 650)
@@ -124,7 +122,6 @@ class LVMediaDownloader(ctk.CTk):
         try: self.iconbitmap(resource_path("media/5D.ico"))
         except: pass
 
-        # Variáveis
         self.pasta_destino = ""
         self.processo_download = None
         self.parou_manual = False
@@ -132,8 +129,7 @@ class LVMediaDownloader(ctk.CTk):
         self.font_bold = ("Segoe UI", 12, "bold")
         self.font_mono = ("Consolas", 11)
         
-        # Controle de Estado e Idioma
-        self.status_atual_key = "status_ready" # Guarda a chave do status atual
+        self.status_atual_key = "status_ready" 
         self.idioma = "pt"
         self.mapa_idiomas = {"Português": "pt", "English": "en", "Español": "es"}
 
@@ -144,7 +140,7 @@ class LVMediaDownloader(ctk.CTk):
         return TRADUCOES[self.idioma].get(key, key)
 
     def setup_ui(self):
-        # --- Topo (URL e Idioma) ---
+        
         frame_top = ctk.CTkFrame(self)
         frame_top.pack(fill=tk.X, padx=15, pady=(15, 5))
 
@@ -173,7 +169,6 @@ class LVMediaDownloader(ctk.CTk):
         self.status_label = ctk.CTkLabel(frame_top, text="", text_color="white", width=120, height=30, corner_radius=6, font=self.font_bold, fg_color="green")
         self.status_label.pack(side=tk.RIGHT, padx=(5, 10))
 
-        # --- MEIO ---
         self.frame_central = ctk.CTkFrame(self, fg_color="transparent")
         self.frame_central.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
@@ -186,7 +181,6 @@ class LVMediaDownloader(ctk.CTk):
         self.caixa_log = ctk.CTkTextbox(self.frame_central, wrap=tk.WORD, font=self.font_mono)
         self.criar_menu_contexto(self.caixa_log, readonly=True)
 
-        # --- Base ---
         frame_baixar = ctk.CTkFrame(self)
         frame_baixar.pack(fill=tk.X, padx=15, pady=(5, 15))
 
@@ -209,17 +203,15 @@ class LVMediaDownloader(ctk.CTk):
         self.btn_parar = ctk.CTkButton(frame_baixar, text="", width=100, font=self.font_bold, fg_color="#D9534F", hover_color="#C9302C", command=self.parar_download)
         self.btn_parar.pack(side=tk.LEFT, padx=(5, 10))
 
-    # --- Lógica de Idioma ---
     def mudar_idioma(self, escolha):
         self.idioma = self.mapa_idiomas[escolha]
         self.atualizar_textos()
 
     def atualizar_textos(self):
-        # Textos Gerais
+
         self.lbl_url.configure(text=self.t("url_label"))
         self.btn_verificar.configure(text=self.t("btn_verify"))
         
-        # Atualiza o status baseado no estado atual (não força "Pronto")
         self.status_label.configure(text=self.t(self.status_atual_key))
         
         self.frame_lista.configure(label_text=self.t("list_title"))
@@ -241,7 +233,6 @@ class LVMediaDownloader(ctk.CTk):
         if self.ultimo_resultado:
             self._processar_output_lista(self.ultimo_resultado)
 
-    # --- Lógica de Interface ---
     def mostrar_painel(self, qual):
         if qual == "lista":
             self.caixa_log.pack_forget()
@@ -302,16 +293,16 @@ class LVMediaDownloader(ctk.CTk):
         widget.bind("<Button-3>", mostrar)
 
     def atualizar_estado(self, status):
-        # Mapeamento
+
         mapa = {
             "ocupado": ("disabled", "status_busy", "orange"),
             "download": ("disabled", "status_download", "red"),
             "pronto": ("normal", "status_ready", "green")
         }
-        # Pega a configuração
+
         estado, key_texto, cor = mapa.get(status, ("normal", "status_ready", "green"))
         
-        # Salva a chave atual para o caso de mudança de idioma
+
         self.status_atual_key = key_texto
         
         self.btn_verificar.configure(state=estado)
@@ -335,7 +326,7 @@ class LVMediaDownloader(ctk.CTk):
         else:
             self.entrada_formato.insert(tk.END, f"+{codigo}")
 
-    # --- Verificação ---
+
     def verificar_link(self):
         url = self.entrada_url.get().strip()
         if not url: return messagebox.showwarning("Aviso", self.t("msg_warn_link"))
@@ -415,7 +406,7 @@ class LVMediaDownloader(ctk.CTk):
             ctk.CTkLabel(self.frame_lista, text=descricao, font=self.font_mono, anchor="w").grid(row=row_idx, column=2, padx=5, pady=2, sticky="w")
             row_idx += 1
 
-    # --- Download ---
+
     def baixar_video(self):
         url = self.entrada_url.get().strip()
         formato = self.entrada_formato.get().strip()
@@ -424,7 +415,7 @@ class LVMediaDownloader(ctk.CTk):
 
         self.mostrar_painel("log")
         self.caixa_log.delete(1.0, tk.END)
-        # LOG FIXO EM INGLÊS
+
         self.caixa_log.insert(tk.END, ">> Starting download...\n") 
 
         self.parou_manual = False
@@ -465,7 +456,7 @@ class LVMediaDownloader(ctk.CTk):
                 self.parou_manual = True
                 subprocess.run(["taskkill", "/F", "/PID", str(self.processo_download.pid), "/T"], 
                                capture_output=True, creationflags=WIN_FLAGS)
-                # LOG FIXO EM INGLÊS
+
                 self.caixa_log.insert(tk.END, "\n>> PROCESS STOPPED BY USER.\n") 
             except Exception as e:
                 messagebox.showerror("Erro", str(e))
